@@ -42,7 +42,7 @@ The deployment process is automated using a **Jenkins CI/CD pipeline**, from sou
 | 🐳 Docker     | Application containerization |
 | ☸️ Kubernetes | Container orchestration      |
 | 🌐 Ingress    | External traffic routing     |
-| ⚙️ Jenkins    | CI/CD automation             |
+| ⚙️ GitHub Actions    | CI/CD automation             |
 | 🗂️ GitHub    | Source-code management       |
 
 ## 🔄 Deployment Flow
