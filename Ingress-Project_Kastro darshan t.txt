@@ -4,7 +4,7 @@
 
  														   *by*
 
-=================== 										 			**Kastro Kiran V**
+=================== 										 			**DARSHAN T**
 Step 1: Basic Setup
 ===================
 1.1. Push the code from Local to Remote
@@ -19,7 +19,7 @@ Select at least:
  	Copy the token (you won't be able to see it again!)
 
 🔁 Update Git credentials:
-git remote set-url origin https://<your\_username>:<your\_token>@github.com/KastroVKiran/microservices-ingress-kastro.git
+git remote set-url origin https://<your\_username>:<your\_token>@https://github.com/darshant15/microservices-ingress-kastro.git
 
 ✅ Push the code
 git push -u origin master
@@ -56,7 +56,7 @@ Kubernetes NodePort service range.
 Step 2: Tools Installation
 ===================
 2.1.1 Connect to the Ingress Server
-vi Jenkins.sh ----> Paste the below content ---->
+vi github actions.sh ----> Paste the below content ---->
 
 #!/bin/bash
 # Update system
@@ -66,18 +66,8 @@ sudo apt install -y fontconfig openjdk-17-jre-headless wget gnupg2
 # Download and add the Jenkins GPG key
 wget -O- https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | \\
     gpg --dearmor | sudo tee /usr/share/keyrings/jenkins-keyring.gpg > /dev/null
-# Add Jenkins repository
-echo "deb \[signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/" | \\
-    sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 # Update package lists
 sudo apt update -y
-# Install Jenkins
-sudo apt install jenkins -y
-# Start Jenkins
-sudo systemctl start jenkins
-sudo systemctl enable jenkins
-# Print status
-sudo systemctl status jenkins
 
 ----> esc ----> :wq ----> sudo chmod +x jenkins.sh ----> ./jenkins.sh
 
@@ -109,24 +99,42 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 ----> esc ----> :wq ----> sudo chmod +x docker.sh ----> ./docker.sh
 
 docker --version
+==========================================
+Step 3: Configure GitHub Actions
+==========================================
 
-==================================
-Step 3: Access Jenkins Dashboard
-==================================
-Setup the Jenkins
+Set up GitHub Actions for the CI/CD pipeline.
 
-3.1. Plugins installation
-Install below plugins;
-Docker, Docker Commons, Docker Pipeline, Docker API, docker-build-step, AWS Credentials, Pipeline stage view, Kubernetes, Kubernetes CLI, Kubernetes Client API, Kubernetes Credentials, Config File Provider, Prometheus metrics
+3.1. Create GitHub Actions Workflow
 
-3.2. Creation of Credentials
-Configure Dockerhub Credentials as "dockerhub-creds"
-Configure AWS Credentials (Access and Secret Access Keys) as "aws-creds"
+Inside the GitHub repository, create the following workflow file:
 
+.github/workflows/deploy.yml
+
+This workflow will automate:
+
+- Source-code checkout
+- Application validation
+- Docker image build
+- Docker image push to Docker Hub
+- Kubernetes application deployment
+
+3.2. Configure GitHub Actions Secrets
+
+Go to:
+
+GitHub Repository → Settings → Secrets and variables → Actions → New repository secret
+
+Add the following Docker Hub secrets:
+
+DOCKER_USERNAME
+DOCKER_PASSWORD
+
+These secrets allow GitHub Actions to securely log in to Docker Hub and push the Docker image without exposing the credentials inside the workflow file.
 3.3. Tools Configuration
 
 =====================================
-Step 4: Creation of EKS Cluster
+Step 4: Creation of EKS kind
 =====================================
 4.1. Creation of IAM user (To create EKS Cluster, its not recommended to create using Root Account)
 
