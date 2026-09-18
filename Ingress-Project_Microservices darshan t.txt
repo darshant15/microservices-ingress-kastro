@@ -2,8 +2,8 @@
 
                                 Deployment of Application using kind and Ingress Controller
     
-                                                                                            by
-                                                                                                 DARSHAN T
+                                                                                                       by
+                                                                                                               DARSHAN T
 
 ===================
 Step 1: Basic Setup
