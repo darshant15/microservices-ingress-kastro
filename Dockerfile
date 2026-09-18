@@ -1,17 +1,19 @@
-FROM nginx:alpine
+# Stage 1: Collect website files
+FROM alpine:3.22 AS builder
 
-# Copy HTML files to nginx document root
-COPY index.html /usr/share/nginx/html/
-COPY about.html /usr/share/nginx/html/
-COPY services.html /usr/share/nginx/html/
-COPY contact.html /usr/share/nginx/html/
-COPY styles.css /usr/share/nginx/html/
+WORKDIR /website
 
-# Copy custom nginx configuration
+COPY index.html .
+COPY about.html .
+COPY services.html .
+COPY contact.html .
+COPY styles.css .
+
+
+# Stage 2: Minimal NGINX runtime
+FROM cgr.dev/chainguard/nginx:latest
+
+COPY --from=builder /website/ /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80
-EXPOSE 80
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
