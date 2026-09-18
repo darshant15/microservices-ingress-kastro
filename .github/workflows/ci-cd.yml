@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
 
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     env:
       DOCKER_HUB_REPO: kastrov/techsolutions-app
