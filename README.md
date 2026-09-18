@@ -36,14 +36,18 @@ The deployment process is automated using a **Jenkins CI/CD pipeline**, from sou
 
 ## 🛠️ Technology Stack
 
-| Technology    | Purpose                      |
-| ------------- | ---------------------------- |
-| ☁️ AWS EKS    | Managed Kubernetes cluster   |
-| 🐳 Docker     | Application containerization |
-| ☸️ Kubernetes | Container orchestration      |
-| 🌐 Ingress    | External traffic routing     |
-| ⚙️ GitHub Actions    | CI/CD automation             |
-| 🗂️ GitHub    | Source-code management       |
+| Technology        | Purpose                      |
+| ----------------- | ---------------------------- |
+| ☁️ AWS EKS        | Managed Kubernetes cluster   |
+| 🐳 Docker         | Application containerization |
+| ☸️ Kubernetes     | Container orchestration      |
+| 🌐 Ingress        | External traffic routing     |
+| ⚙️ GitHub Actions | CI/CD automation             |
+| 🗂️ GitHub         | Source-code management       |
+| 🔧 Git            | Version control              |
+| 📊 Prometheus     | Monitoring and metrics       |
+| 📈 Grafana        | Monitoring and visualization |
+| 🔄 ArgoCD         | GitOps continuous delivery   |
 
 ## 🔄 Deployment Flow
 
