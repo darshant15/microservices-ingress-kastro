@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Deploy to Kind
 
 on:
   push:
@@ -7,18 +7,16 @@ on:
 
 jobs:
   build-and-deploy:
-
     runs-on: ubuntu-latest
 
     env:
-      DOCKER_HUB_REPO: kastrov/techsolutions-app
-      NAMESPACE: default
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/techsolutions-app
       APP_NAME: techsolutions
+      NAMESPACE: default
 
     steps:
-
       # 1. Checkout source code
-      - name: Checkout
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
       # 2. Login to Docker Hub
@@ -28,57 +26,96 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 3. Build Docker image
-      - name: Build Docker Image
-        run: |
-          docker build \
-            -t $DOCKER_HUB_REPO:${{ github.sha }} \
-            -t $DOCKER_HUB_REPO:latest \
-            .
+      # 3. Build and push Docker image
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
 
-      # 4. Push Docker image
-      - name: Push Docker Image
+      # 4. Create Kind cluster configuration
+      - name: Create Kind Configuration
         run: |
-          docker push $DOCKER_HUB_REPO:${{ github.sha }}
-          docker push $DOCKER_HUB_REPO:latest
+          mkdir -p /tmp/kind
+          printf '%s\n' \
+            'kind: Cluster' \
+            'apiVersion: kind.x-k8s.io/v1alpha4' \
+            'nodes:' \
+            '  - role: control-plane' \
+            '    extraPortMappings:' \
+            '      - containerPort: 80' \
+            '        hostPort: 80' \
+            '        protocol: TCP' \
+            '      - containerPort: 443' \
+            '        hostPort: 443' \
+            '        protocol: TCP' \
+            > /tmp/kind/config.yaml
 
-      # 5. Check Kubernetes cluster
-      - name: Check Kubernetes
+      # 5. Create temporary Kubernetes cluster
+      - name: Create Kind Cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: techsolutions-cluster
+          config: /tmp/kind/config.yaml
+
+      # 6. Verify the cluster
+      - name: Check Kubernetes Cluster
         run: |
           kubectl config current-context
           kubectl get nodes
 
-      # 6. Update image in Deployment
+      # 7. Install NGINX Ingress Controller
+      - name: Install NGINX Ingress Controller
+        run: |
+          kubectl apply -f \
+            https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+          kubectl wait \
+            --namespace ingress-nginx \
+            --for=condition=Ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=180s
+
+      # 8. Update the Docker image in deployment.yaml
       - name: Update Kubernetes Image
         run: |
-          sed -i.bak \
-            "s|kastrov/techsolutions-app:latest|$DOCKER_HUB_REPO:${{ github.sha }}|g" \
+          sed -i \
+            "s|kastrov/techsolutions-app:latest|${IMAGE_NAME}:${GITHUB_SHA}|g" \
             k8s/deployment.yaml
 
-      # 7. Deploy application
+          grep "image:" k8s/deployment.yaml
+
+      # 9. Deploy application
       - name: Deploy Application
         run: |
-          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/deployment.yaml \
+            --namespace "$NAMESPACE"
 
-      # 8. Wait for deployment
-      - name: Check Deployment
-        run: |
-          kubectl rollout status deployment/$APP_NAME-deployment \
+          kubectl rollout status \
+            deployment/${APP_NAME}-deployment \
+            --namespace "$NAMESPACE" \
             --timeout=300s
-
-      # 9. Check Pods and Service
-      - name: Check Kubernetes Resources
-        run: |
-          kubectl get pods -l app=$APP_NAME
-          kubectl get svc $APP_NAME-service
 
       # 10. Deploy Ingress
       - name: Deploy Ingress
         run: |
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/ingress.yaml \
+            --namespace "$NAMESPACE"
 
-      # 11. Check Ingress
-      - name: Check Ingress
+      # 11. Verify resources
+      - name: Check Kubernetes Resources
         run: |
-          kubectl get ingress
-          kubectl describe ingress $APP_NAME-ingress
+          kubectl get pods --namespace "$NAMESPACE"
+          kubectl get services --namespace "$NAMESPACE"
+          kubectl get ingress --namespace "$NAMESPACE"
+          kubectl describe ingress ${APP_NAME}-ingress \
+            --namespace "$NAMESPACE"
+
+      # 12. Test application
+      - name: Test Application
+        run: |
+          sleep 15
+          curl --fail --retry 10 --retry-delay 5 http://localhost/
